@@ -28,7 +28,7 @@
         </dependency>
     </dependencies>
 
-    <build>
+   <build>
     <plugins>
         <plugin>
             <groupId>org.springframework.boot</groupId>
@@ -36,6 +36,13 @@
             <configuration>
                 <mainClass>com.lab.captcha.CaptchaApplication</mainClass>
             </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>repackage</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 </build>
