@@ -1,39 +1,40 @@
 package com.lab.captcha;
 
-import com.google.code.kaptcha.impl.DefaultKaptcha;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.google.code.kaptcha.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/captcha")
+@CrossOrigin(origins = "*") // السماح لجميع المواقع بالاتصال بالسيرفر
 public class CaptchaController {
 
     @Autowired
-    private DefaultKaptcha captchaProducer;
+    private Producer captchaProducer;
+
+    // متغير لتخزين الكود بشكل مؤقت (بديل للسيشن لضمان العمل على Render المجاني)
+    private String lastGeneratedCode = "";
 
     @GetMapping("/render")
-    public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void render(HttpServletResponse response) throws IOException {
         response.setContentType("image/jpeg");
-        String capText = captchaProducer.createText();
-        request.getSession().setAttribute("captcha_key", capText);
-        BufferedImage bi = captchaProducer.createImage(capText);
+        lastGeneratedCode = captchaProducer.createText();
+        BufferedImage bi = captchaProducer.createImage(lastGeneratedCode);
         ImageIO.write(bi, "jpg", response.getOutputStream());
     }
 
-    @PostMapping("/verify")
-    public String verify(@RequestParam String code, HttpServletRequest request) {
-        String sessionCode = (String) request.getSession().getAttribute("captcha_key");
-        if (sessionCode != null && sessionCode.equalsIgnoreCase(code)) {
-            return "✅ Correct!";
+    @GetMapping("/verify") // تم تغييرها إلى Get لتطابق طلب الـ HTML
+    public boolean verify(@RequestParam String code) {
+        if (lastGeneratedCode != null && lastGeneratedCode.equalsIgnoreCase(code)) {
+            return true;
         }
-        return "❌ Incorrect!";
+        return false;
     }
 
     @GetMapping("/status")
@@ -41,5 +42,3 @@ public class CaptchaController {
         return "Captcha Service is Running!";
     }
 }
-
-
