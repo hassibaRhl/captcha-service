@@ -4,11 +4,13 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/captcha")
 public class CaptchaController {
@@ -39,3 +41,4 @@ public class CaptchaController {
         return "Captcha Service is Running!";
     }
 }
+
