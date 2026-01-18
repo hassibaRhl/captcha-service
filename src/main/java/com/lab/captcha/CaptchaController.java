@@ -1,40 +1,36 @@
 package com.lab.captcha;
 
-import com.google.code.kaptcha.Producer;
+import com.google.code.kaptcha.impl.DefaultKaptcha;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@CrossOrigin(origins = "*") 
 @RestController
 @RequestMapping("/api/captcha")
-@CrossOrigin(origins = "*") // السماح لجميع المواقع بالاتصال بالسيرفر
 public class CaptchaController {
 
     @Autowired
-    private Producer captchaProducer;
+    private DefaultKaptcha captchaProducer;
 
-    // متغير لتخزين الكود بشكل مؤقت (بديل للسيشن لضمان العمل على Render المجاني)
-    private String lastGeneratedCode = "";
+    private static String lastText = ""; // تخزين الكود للتحقق
 
     @GetMapping("/render")
     public void render(HttpServletResponse response) throws IOException {
         response.setContentType("image/jpeg");
-        lastGeneratedCode = captchaProducer.createText();
-        BufferedImage bi = captchaProducer.createImage(lastGeneratedCode);
+        response.setHeader("Cache-Control", "no-store, no-cache");
+        
+        lastText = captchaProducer.createText();
+        BufferedImage bi = captchaProducer.createImage(lastText);
         ImageIO.write(bi, "jpg", response.getOutputStream());
     }
 
-    @GetMapping("/verify") // تم تغييرها إلى Get لتطابق طلب الـ HTML
+    @GetMapping("/verify")
     public boolean verify(@RequestParam String code) {
-        if (lastGeneratedCode != null && lastGeneratedCode.equalsIgnoreCase(code)) {
-            return true;
-        }
-        return false;
+        return lastText != null && lastText.equalsIgnoreCase(code);
     }
 
     @GetMapping("/status")
