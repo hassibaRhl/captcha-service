@@ -2,13 +2,14 @@ package com.lab.captcha;
 
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-@CrossOrigin(origins = "*") 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/captcha")
 public class CaptchaController {
@@ -16,25 +17,30 @@ public class CaptchaController {
     @Autowired
     private DefaultKaptcha captchaProducer;
 
-    private static String lastText = ""; // تخزين الكود للتحقق
+    // تخزين الكود في الذاكرة (لأغراض المختبر) لضمان عدم حدوث خطأ 500
+    private static String currentCaptchaText = "";
 
-    @GetMapping("/render")
-    public void render(HttpServletResponse response) throws IOException {
-        response.setContentType("image/jpeg");
-        response.setHeader("Cache-Control", "no-store, no-cache");
+    @GetMapping(value = "/render", produces = MediaType.IMAGE_JPEG_VALUE)
+    public @ResponseBody byte[] render() throws IOException {
+        // 1. إنشاء نص الكابتشا
+        currentCaptchaText = captchaProducer.createText();
         
-        lastText = captchaProducer.createText();
-        BufferedImage bi = captchaProducer.createImage(lastText);
-        ImageIO.write(bi, "jpg", response.getOutputStream());
+        // 2. إنشاء الصورة
+        BufferedImage bi = captchaProducer.createImage(currentCaptchaText);
+        
+        // 3. تحويل الصورة إلى مصفوفة bytes لإرسالها للمتصفح مباشرة
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bi, "jpg", baos);
+        return baos.toByteArray();
     }
 
     @GetMapping("/verify")
     public boolean verify(@RequestParam String code) {
-        return lastText != null && lastText.equalsIgnoreCase(code);
+        return currentCaptchaText != null && currentCaptchaText.equalsIgnoreCase(code);
     }
 
     @GetMapping("/status")
     public String status() {
-        return "Captcha Service is Running!";
+        return "السيرفر يعمل بنجاح! 🚀";
     }
 }
